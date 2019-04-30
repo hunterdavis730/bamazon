@@ -4,6 +4,7 @@ var Table = require("cli-table")
 var admins = [];
 var employees = [];
 var allProducts = [];
+var department_list = [];
 var ids = [];
 var lowInv = [];
 var quantity;
@@ -36,9 +37,14 @@ function start() {
             case "Admin":
                 getAdmins()
                 break;
+
         }
     })
 };
+
+
+
+// end of supervisor functions
 
 function userPurpose() {
     inquirer.prompt([{
@@ -71,13 +77,13 @@ function getAdmins() {
         for (var i = 0; i < admins.length; i++) {
             employees.push(admins[i].name.toLowerCase().trim());
         }
-        console.log(employees)
+
         inquirer.prompt([{
             type: "input",
             message: "Please enter your full admin name",
             name: "name"
         }]).then(function (resp) {
-            console.log(resp.name)
+
             if (employees.includes(resp.name.toLowerCase().trim())) {
                 var currentAdmin = resp.name;
                 inquirer.prompt([{
@@ -137,7 +143,7 @@ function adminActions() {
     inquirer.prompt([{
         type: "list",
         message: `What would you like to do today?`,
-        choices: ["View Low Inventory", "View Products for Sale", "Add to Inventory", "Add a Product", "Exit"],
+        choices: ["View Low Inventory", "View Products for Sale", "Add to Inventory", "Add a Product", "View Product Sales By Department", "Create New Department", "Exit"],
         name: "action"
     }]).then(function (resp) {
         switch (resp.action) {
@@ -154,11 +160,197 @@ function adminActions() {
             case "Add a Product":
                 addProduct()
                 break;
+            case "View Product Sales By Department":
+                salesAction();
+                break;
+            case "Create New Department":
+                createDep()
+                break;
             case "Exit":
                 console.log("Bye")
                 connection.end()
                 break;
         }
+    })
+}
+
+function salesAction() {
+    inquirer.prompt([{
+        type: "list",
+        message: "What would you like to view?",
+        choices: ["Net Profit", "Gross Profit", "Overhead"],
+        name: "profit"
+    }]).then(function (resp) {
+        var event = resp.profit;
+        switch (event) {
+            case "Net Profit":
+                viewProfit();
+
+                break;
+            case "Gross Profit":
+                viewGross();
+                break;
+            case "Overhead":
+                viewOverhead()
+                break;
+        }
+    })
+}
+
+function viewOverhead() {
+    department_list = [];
+    var query = "SELECT * FROM departments";
+    connection.query(query, function (err, resp) {
+        if (err) throw err;
+        for (var i = 0; i < resp.length; i++) {
+            department_list.push(resp[i].name);
+        }
+
+        setTimeout(initOverhead, 500)
+    })
+}
+
+function initOverhead() {
+    inquirer.prompt([{
+        type: "list",
+        message: "Select which department you wish to view overhead for",
+        choices: department_list,
+        name: "department"
+    }]).then(function (resp) {
+        var department = resp.department;
+        var query = "SELECT * FROM departments WHERE ?";
+        connection.query(query, {
+            name: department
+        }, function (err, resp) {
+            if (err) throw err;
+            var table = new Table({
+                head: ['Department ID', 'Department Name', 'Overhead'],
+                colWidths: [15, 40, 10]
+            })
+
+            for (var i = 0; i < resp.length; i++) {
+                table.push([`${resp[i].id}`, `${resp[i].name}`, `${resp[i].over_head}`])
+            }
+
+
+
+            console.log("\n\n" + table.toString() + "\n\n");
+            setTimeout(adminActions, 500)
+        })
+    })
+}
+
+function viewGross() {
+    department_list = [];
+    var query = "SELECT * FROM departments";
+    connection.query(query, function (err, resp) {
+        if (err) throw err;
+        for (var i = 0; i < resp.length; i++) {
+            department_list.push(resp[i].name);
+        }
+
+        setTimeout(initGross, 500)
+    })
+}
+
+function initGross() {
+    inquirer.prompt([{
+        type: "list",
+        message: "Select which department you wish to view gross profit for",
+        choices: department_list,
+        name: "department"
+    }]).then(function (resp) {
+        var department = resp.department;
+        var query = "SELECT * FROM departments WHERE ?";
+        connection.query(query, {
+            name: department
+        }, function (err, resp) {
+            if (err) throw err;
+            var table = new Table({
+                head: ['Department ID', 'Department Name', 'Gross Profit'],
+                colWidths: [15, 40, 10]
+            })
+
+            for (var i = 0; i < resp.length; i++) {
+                table.push([`${resp[i].id}`, `${resp[i].name}`, `${resp[i].product_sales}`])
+            }
+
+
+
+            console.log("\n\n" + table.toString() + "\n\n");
+            setTimeout(adminActions, 500)
+        })
+    })
+}
+
+
+function viewProfit() {
+    department_list = [];
+    var query = "SELECT * FROM departments";
+    connection.query(query, function (err, resp) {
+        if (err) throw err;
+        for (var i = 0; i < resp.length; i++) {
+            department_list.push(resp[i].name);
+        }
+
+        setTimeout(initProfit, 500)
+    })
+
+}
+
+function initProfit() {
+    inquirer.prompt([{
+        type: "list",
+        message: "Select which department you wish to view net profit for",
+        choices: department_list,
+        name: "department"
+    }]).then(function (resp) {
+        var department = resp.department;
+        var query = "SELECT * FROM departments WHERE ?";
+        connection.query(query, {
+            name: department
+        }, function (err, resp) {
+            if (err) throw err;
+            var table = new Table({
+                head: ['Department ID', 'Department Name', 'Net Profit'],
+                colWidths: [15, 40, 10]
+            })
+
+            for (var i = 0; i < resp.length; i++) {
+                table.push([`${resp[i].id}`, `${resp[i].name}`, `${resp[i].total_profit}`])
+            }
+
+
+
+            console.log("\n\n" + table.toString() + "\n\n");
+            setTimeout(adminActions, 500)
+        })
+    })
+}
+
+function createDep() {
+    inquirer.prompt([{
+        type: "input",
+        message: "What would you like to call this new department?",
+        name: 'name',
+        validate: function val(name) {
+            if (name === '' || name === ' ') {
+                console.log('Please Enter a department name')
+            } else {
+                return true;
+            }
+        }
+    }]).then(function (resp) {
+        var department = resp.name;
+        var overhead = 1200;
+        var query = "INSERT INTO departments (name, over_head) VALUES (?,?)";
+        var values = [department, overhead];
+        connection.query(query, values, function (err, resp) {
+            if (err) throw err;
+            console.log("Department added!")
+            adminActions();
+        })
+
     })
 }
 
@@ -261,6 +453,22 @@ function initInv(id, stock) {
 }
 
 function addProduct() {
+    department_list = [];
+    var query = "SELECT * FROM departments";
+    connection.query(query, function (err, resp) {
+        if (err) throw err;
+        for (var i = 0; i < resp.length; i++) {
+            department_list.push(resp[i].name);
+        }
+
+        setTimeout(product, 600);
+
+    })
+
+
+}
+
+function product() {
     inquirer.prompt([{
             type: "input",
             message: "Enter the name of the product you want to add",
@@ -302,7 +510,7 @@ function addProduct() {
         {
             type: "list",
             message: "Which department would you like to add this product to?",
-            choices: ["Clothing", "Shoes", "Electronics", "Home/Office", "Health/Beauty"],
+            choices: department_list,
             name: "department"
         }
     ]).then(function (resp) {
@@ -435,6 +643,35 @@ function welcome() {
     })
 }
 
+
+function configGrossSales(dep) {
+    var query = "SELECT * FROM departments WHERE ?"
+    connection.query(query, {
+        name: dep
+    }, function (err, resp) {
+        if (err) throw err;
+
+        var sales = resp[0].product_sales;
+        var over = resp[0].over_head;
+        var gross = sales - over;
+
+        var queryTwo = "UPDATE departments SET ? WHERE ?";
+        connection.query(queryTwo, [{
+                total_profit: gross
+            },
+            {
+                name: dep
+            }
+        ], function (err, resp) {
+            if (err) throw err;
+
+        })
+
+    })
+}
+
+
+
 function processOrder(product, quantity) {
     var query = "SELECT * FROM products WHERE ?"
     connection.query(query, {
@@ -447,7 +684,8 @@ function processOrder(product, quantity) {
             var price = quantity * results.price;
             var stockLeft = results.stock - quantity;
             var productName = results.name;
-            orderSuccess(price, stockLeft, productName);
+            var department = results.department_name;
+            orderSuccess(price, stockLeft, productName, department);
 
         } else {
             console.log("Insufficient quantity in stock")
@@ -456,7 +694,37 @@ function processOrder(product, quantity) {
     })
 }
 
-function orderSuccess(price, stockLeft, productName) {
+function updateSales(department, price) {
+
+    var query = "SELECT * FROM departments WHERE ?";
+    connection.query(query, {
+        name: department
+    }, function (err, resp) {
+        if (err) throw err;
+        var results = resp[0];
+        var productSales = results.product_sales;
+        productSales += price;
+        productSales.toFixed(2);
+        var queryTwo = "UPDATE departments SET ? WHERE ?";
+        connection.query(queryTwo, [{
+                product_sales: productSales
+
+            },
+            {
+                name: department
+            }
+        ], function (err, resp) {
+            if (err) throw err;
+            configGrossSales(department)
+            setTimeout(newPurchase, 500)
+        })
+
+    })
+
+}
+
+function orderSuccess(price, stockLeft, productName, department) {
+
     inquirer.prompt([{
         type: "confirm",
         message: `Your total is $${price.toFixed(2)}. Are you sure you wish to continue?`,
@@ -501,7 +769,8 @@ function orderSuccess(price, stockLeft, productName) {
                                 if (err) throw err;
 
                             })
-                            connection.end()
+                            updateSales(department, price)
+
                         } else {
                             console.log("Your perks ID was invalid")
                             inquirer.prompt([{
@@ -524,7 +793,8 @@ function orderSuccess(price, stockLeft, productName) {
                                         if (err) throw err;
 
                                     })
-                                    connection.end()
+                                    updateSales(department, price)
+
                                 } else {
                                     tryAgain();
                                 }
@@ -546,7 +816,8 @@ function orderSuccess(price, stockLeft, productName) {
                         if (err) throw err;
 
                     })
-                    connection.end()
+                    updateSales(department, price)
+
                 }
             })
         } else {
@@ -564,6 +835,21 @@ function tryAgain() {
         if (res.confirm) {
 
             welcome();
+        } else {
+            console.log("Okay have a great day!")
+            connection.end()
+        }
+    })
+}
+
+function newPurchase() {
+    inquirer.prompt([{
+        type: 'confirm',
+        message: "Would you like to make another purchase?",
+        name: "confirm"
+    }]).then(function (resp) {
+        if (resp.confirm) {
+            welcome()
         } else {
             console.log("Okay have a great day!")
             connection.end()

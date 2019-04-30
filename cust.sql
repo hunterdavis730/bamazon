@@ -64,3 +64,22 @@ CREATE TABLE admins(
 );
 
 INSERT INTO admins(name, password) VALUES("Yannick Illunga", "uglyjumper3");
+
+CREATE TABLE departments(
+    id INTEGER NOT NULL auto_increment,
+    name varchar(60) NOT NULL,
+    over_head DECIMAL(15, 2) NOT NULL,
+    product_sales DECIMAL(15, 2) DEFAULT 0,
+    total_profit DECIMAL(15, 2) DEFAULT 0, 
+    PRIMARY KEY(id),
+)
+
+INSERT INTO departments(name, over_head) VALUES("Clothing", 600);
+
+INSERT INTO departments(name, over_head) VALUES("Shoes", 800);
+
+INSERT INTO departments(name, over_head) VALUES("Home/Office", 1000);
+
+INSERT INTO departments(name, over_head) VALUES("Health/Beauty", 700);
+
+INSERT INTO departments(name, over_head) VALUES("Electronics", 1800);
